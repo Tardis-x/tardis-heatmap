@@ -7,7 +7,7 @@
         display: block;
       }
     </style>
-    <h2>Hello [[prop1]]</h2>
+    <canvas id="myCanvas" ></canvas>
   </template>
 
   <script>
@@ -20,7 +20,129 @@
           type: String,
           value: 'tardis-heatmap',
         },
+        canvasContext: {
+          type: Object
+        },
+        points: {
+          type: Array
+        },
+        viewportFactor: {
+          type: Number,
+          value: 1
+        },
+        viewport: {
+          type: Object,
+          value: {
+            width: 0,
+            height: 0
+          }
+        }
       },
+
+      ready: function () {
+        this.canvas = this.$.myCanvas;
+
+        this.points = [
+          { x: 0, y: 0 },
+          { x: 0, y: 60 },
+          { x: 8, y: 60 },
+          { x: 12, y: 55 },
+          { x: 9, y: 55 },
+          { x: 9, y: 42 },
+          { x: 16, y: 42 },
+          { x: 16, y: 36 },
+          { x: 104, y: 36 },
+          { x: 104, y: 0 }
+        ];
+
+        this.canvasContext = this.canvas.getContext("2d");
+        // this.canvasContext.fillStyle = "#FF0000";
+        // this.canvasContext.fillRect(0,0,150,80);
+
+        this._analyzePlan();
+
+        this._drawPlan();
+      },
+
+      _analyzePlan: function () {
+        var minX = maxX = this.points[0].x;
+        var minY = maxY = this.points[0].y;
+
+        for (var i = 1; i < this.points.length; i++) {
+          var point = this.points[i];
+
+          if (point.x < minX) {
+            minX = point.x;
+          } else if (point.x > maxX) {
+            maxX = point.x;
+          }
+
+          if (point.y < minY) {
+            minY = point.y;
+          } else if (point.y > maxY) {
+            maxY = point.y;
+          }
+        }
+
+        console.log(minX, minY);
+        console.log(maxX, maxY);
+        this.viewport.width = maxX - minX;
+        this.viewport.height = maxY - minY;
+
+        var widthFactor = this.canvas.width / (maxX - minX);
+        var heightFactor = this.canvas.height / (maxY - minY);
+
+        this.viewportFactor = (widthFactor < heightFactor) ? widthFactor : heightFactor;
+
+        // console.log(this.canvas.width, this.canvas.height);
+      },
+
+      _drawPlan: function () {
+        var points = this.points;
+        points.push(this.points[0]);
+
+        this.canvasContext.beginPath();
+        this._moveTo(this.canvasContext, points[0].x, points[0].y);
+        for (var i = 0; i < points.length - 1; i++) {
+          // console.log(point);
+          var point = points[i];
+          var nextPoint = points[i + 1];
+
+
+          this._lineTo(this.canvasContext, nextPoint.x, nextPoint.y);
+        }
+
+        this.canvasContext.stroke();
+
+      },
+
+      _moveTo: function (ctx, x, y) {
+        console.log(
+          'moveTo',
+          x,
+          y,
+          Math.floor(x * this.viewportFactor),
+          Math.floor(y * this.viewportFactor)
+        );
+        ctx.moveTo(
+          Math.floor(x * this.viewportFactor) + 0.5,
+          Math.floor(y * this.viewportFactor) + 0.5
+        );
+      },
+
+      _lineTo: function (ctx, x, y) {
+        console.log(
+          'lineTo',
+          x,
+          y,
+          Math.floor(x * this.viewportFactor),
+          Math.floor(y * this.viewportFactor)
+        );
+        ctx.lineTo(
+          Math.floor(x * this.viewportFactor) + 0.5,
+          Math.floor(y * this.viewportFactor) + 0.5
+        );
+      }
 
     });
   </script>
